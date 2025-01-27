@@ -1,0 +1,1 @@
+/usr/bin/c++ -rdynamic CMakeFiles/lexical_analyser.dir/src/tokenizer.cpp.o CMakeFiles/lexical_analyser.dir/src/filereader.cpp.o CMakeFiles/lexical_analyser.dir/src/main.cpp.o -o lexical_analyser 

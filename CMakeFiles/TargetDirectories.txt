@@ -1,0 +1,3 @@
+/home/popodum/winter2025/442/A1/CMakeFiles/lexical_analyser.dir
+/home/popodum/winter2025/442/A1/CMakeFiles/edit_cache.dir
+/home/popodum/winter2025/442/A1/CMakeFiles/rebuild_cache.dir
