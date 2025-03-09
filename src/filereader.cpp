@@ -1,34 +1,28 @@
+#include "../include/filereader.h"
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
 #include <string>
 
-class FileCharReader {
-private:
-  std::string fileContent; // Holds the file content in memory
+// Constructor: Reads the file into memory
+FileCharReader::FileCharReader(const std::string &filePath) {
+  std::ifstream file(filePath, std::ios::in | std::ios::binary);
 
-public:
-  // Constructor: Reads the file into memory
-  FileCharReader(const std::string &filePath) {
-    std::ifstream file(filePath, std::ios::in | std::ios::binary);
-
-    if (!file.is_open()) {
-      throw std::runtime_error("Unable to open file: " + filePath);
-    }
-
-    // Read file content into a string
-    fileContent = std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-    file.close();
+  if (!file.is_open()) {
+    throw std::runtime_error("Unable to open file: " + filePath);
   }
 
-  // Returns a pointer to the start of the file content
-  const char* getCharPointer() const {
-    return fileContent.c_str();
-  }
+  // Read file content into a string
+  fileContent = std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+  file.close();
+}
 
-  // Returns the size of the file content
-  size_t size() const {
-    return fileContent.size();
-  }
-};
+// Returns a pointer to the start of the file content
+const char* FileCharReader::getCharPointer() const {
+  return fileContent.c_str();
+}
 
+// Returns the size of the file content
+size_t FileCharReader::size() const {
+  return fileContent.size();
+}

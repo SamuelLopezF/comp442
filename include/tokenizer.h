@@ -1,80 +1,77 @@
-#ifndef TOKENIZER
-#define TOKENIZER
+#ifndef TOKENIZER_H
+#define TOKENIZER_H
+
+#include <string>
+#include <vector>
 #include <cstddef>
+#include <regex>
+#include <fstream>
+#include <iostream>
+using std::string;
+using std::vector;
+using std::size_t;
+
 namespace token {
+
+// A simple Token structure.
+struct Token {
+    string type;
+    string value;
+};
+
+// Lexeme holds a token and the number of characters consumed.
+struct Lexeme {
+    Token token;
+    size_t length;
+};
+
+// A structure to hold the state of the tokenizer.
+struct State {
+    int new_state;
+    int letter_start;
+    int non_zero_digit_start;
+    int zero_start;
+    int special_char_start;
+    int single_char_operator_start;
+    int single_line_comment_start;
+    int multi_line_comment_start;
+    // Layer two:
+    int interger_start;
+    int fraction_start;
+    int two_char_operator_start;
+};
+
 class Tokenizer {
-
-  // Base
-  struct Digit {
-    char digit;
-  };
-  struct Letter {
-    char letter;
-  };
-  struct ZeroDigit {
-    char c;
-  };
-  struct Operator {
-    char c;
-  };
-  struct AlphaNumeric {
-    char c;
-  };
-
-  // Composed
-  struct NonZeroDigit {
-    Digit *digit;
-  };
-  struct Fraction {
-    char dot;
-    Digit *digits;
-    NonZeroDigit end_digit;
-  };
-  struct Interger {
-    Digit *digits;
-  };
-
-  struct Float {
-    Interger interger;
-    Fraction fraction;
-    char exponent_char;
-    char sign;
-    Interger exponent;
-  };
-
-  struct Id {
-    Letter id_start;
-    AlphaNumeric *id;
-  };
-
 public:
-  Tokenizer();
-  Tokenizer(Tokenizer &&) = default;
-  Tokenizer(const Tokenizer &) = default;
-  Tokenizer &operator=(Tokenizer &&) = default;
-  Tokenizer &operator=(const Tokenizer &) = default;
-  ~Tokenizer() = default;
-  size_t IngestChar(const char *c);
-  size_t NewToken(const char *c);
-  struct State {
-    // layer one starts
-    bool new_state;
-    bool letter_start;
-    bool non_zero_digit_start;
-    bool zero_start;
-    bool special_char_start;
-    bool single_char_operator_start;
-    bool single_line_comment_start;
-    bool multi_line_comment_start;
+    // Constructs a tokenizer for the given filename.
+    Tokenizer(string filename);
 
-    // layer two start
-    bool interger_start;
-    bool fraction_start;
-    bool two_char_operator_start;
-  };
+    // Ingests characters starting at c.
+    // Returns a Lexeme which contains the token (with type and value)
+    // and the number of characters that were matched.
+    Lexeme IngestChar(const char *c);
+
+    // Tries to form a new token from the characters starting at c.
+    // Returns a Lexeme containing the token and match length.
+    Lexeme NewToken(const char *c);
+
+    // Sets up the output files.
+    void setupOutputFile();
+
+    // Writes a token (token type and token value) to the tokens file.
+    void writeTokens(const string &tokenType, const string &tokenValue);
+
+    // Writes an error message to the errors file.
+    void writeErrors(const string &error);
 
 private:
-  State state;
+    string filename;
+    string outputErrorsFileName;
+    string outputTokensFileName;
+    State state;
 };
+
 } // namespace token
-#endif // TOKENIZER
+
+#endif // TOKENIZER_H
+

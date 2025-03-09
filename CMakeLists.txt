@@ -8,7 +8,10 @@ add_executable(
   # h flies
   ./include/tokenizer.h
   ./include/filereader.h
+  ./include/parser.h
+  ./include/filereader.h
   # cpp files
   ./src/tokenizer.cpp 
   ./src/filereader.cpp
+  ./src/parser.cpp
   ./src/main.cpp)
