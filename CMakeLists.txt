@@ -4,6 +4,7 @@ project(lexical_analyser)
 
 add_executable(
   lexical_analyser
+
   # h flies
   ./include/tokenizer.h
   ./include/filereader.h
