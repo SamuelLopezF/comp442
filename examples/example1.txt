@@ -31,7 +31,7 @@ program{
   int int1;
   a=a+b*c;
   x=a+b*c;
-  a=x+z*y;
+  a=x+z*y
 }
 
 	

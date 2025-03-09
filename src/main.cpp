@@ -1,6 +1,7 @@
 #include "../include/parser.h"
 #include "../include/tokenizer.h"
-#include "../include/filereader.h" // Change from including .cpp to .h
+#include "../include/filereader.h"
+#include "../include/ast_builder.h"
 #include <cstddef>
 #include <iostream>
 #include <regex>
@@ -21,24 +22,17 @@ string parse_args(int argc, char **argv, const string &flag) {
 }
 
 int main(int argc, char **argv) {
-    // Build and (optionally) print the parsing table.
-    map<string, map<string, string>> table = buildParsingTable();
-    for (auto &nonterm : table) {
-        cout << "Nonterminal: " << nonterm.first << "\n";
-        for (auto &entry : nonterm.second) {
-            cout << "    Terminal: " << entry.first << "  ==>  Production: " << entry.second << "\n";
-        }
-        cout << "\n";
-    }
-
-    // Initialize the incremental parser state.
-    initParserState();
+    // Create AST builder
+    ASTBuilder astBuilder;
+    
+    // Initialize the incremental parser state with AST builder
+    initParserState(&astBuilder);
 
     try {
         // Get the file path from command-line arguments.
         string filepath = parse_args(argc, argv, "-f");
         if (filepath.empty()) {
-            filepath = "./examples/example1.source"; // default file if none provided.
+            filepath = "./examples/example2.source"; // default file if none provided.
         }
         FileCharReader reader(filepath);
 
@@ -76,6 +70,17 @@ int main(int argc, char **argv) {
                 break;
             }
         }
+        
+        // Add an EOF token to complete parsing
+        Token eofToken;
+        eofToken.type = "$";
+        eofToken.value = "$";
+        feedToken(eofToken);
+        
+        // Get the generated AST and print it
+        cout << "\n=== Abstract Syntax Tree ===\n";
+        astBuilder.printAST();
+        
         return 0;
     } catch (const std::exception &ex) {
         cerr << "Error: " << ex.what() << endl;

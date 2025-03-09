@@ -2,6 +2,7 @@
 #define PARSER_H
 
 #include "tokenizer.h"  // This provides token::Token and token::Lexeme.
+#include "ast_builder.h" // Add this line for AST generation
 #include <map>
 #include <string>
 #include <vector>
@@ -22,9 +23,14 @@ map<string, map<string, string>> buildParsingTable();
 // The parser uses a static parse stack and table.
 void initParserState();
 
+// Initializes with an AST builder
+void initParserState(ASTBuilder* astBuilder);
+
 // Feeds a single token to the parser. Returns true if the token was accepted;
 // returns false if a syntax error occurred.
 bool feedToken(const token::Token &token);
 
-#endif // PARSER_H
+// Get the AST builder instance
+ASTBuilder* getASTBuilder();
 
+#endif // PARSER_H

@@ -1,5 +1,6 @@
 
 #include "../include/parser.h"
+#include "../include/parser.h"
 #include <iostream>
 #include <sstream>
 using namespace std;
@@ -15,7 +16,6 @@ vector<string> splitProduction(const string &prod) {
   }
   return symbols;
 }
-
 map<string, map<string, string>> buildParsingTable() {
   map<string, map<string, string>> table;
 
@@ -128,22 +128,19 @@ map<string, map<string, string>> buildParsingTable() {
   table["STATEMENTS"]["read"] = "STATEMENT STATEMENTS";
   table["STATEMENTS"]["write"] = "STATEMENT STATEMENTS";
   table["STATEMENTS"]["return"] = "STATEMENT STATEMENTS";
-  table["STATEMENTS"]["put"] = "STATEMENT STATEMENTS";
   table["STATEMENTS"]["float"] = "VARDECL STATEMENTS";
   table["STATEMENTS"]["int"] = "VARDECL STATEMENTS";
   table["STATEMENTS"]["}"] = "EPSILON";
 
   // STATEMENT -> ASSIGNMENT | if lparen RELEXPR rparen then STATBLOCK else STATBLOCK semicolon |
   //              while lparen RELEXPR rparen STATBLOCK semicolon | read lparen VARIABLE rparen semicolon |
-  //              write lparen EXPR rparen semicolon | return lparen EXPR rparen semicolon |
-  //              put lparen EXPR rparen semicolon
+  //              write lparen EXPR rparen semicolon | return lparen EXPR rparen semicolon
   table["STATEMENT"]["id"] = "ASSIGNMENT";
   table["STATEMENT"]["self"] = "ASSIGNMENT";
   table["STATEMENT"]["if"] = "if ( RELEXPR ) then STATBLOCK else STATBLOCK ;";
   table["STATEMENT"]["while"] = "while ( RELEXPR ) STATBLOCK ;";
   table["STATEMENT"]["read"] = "read ( VARIABLE ) ;";
   table["STATEMENT"]["write"] = "write ( EXPR ) ;";
-  table["STATEMENT"]["put"] = "put ( EXPR ) ;";
   table["STATEMENT"]["return"] = "return ( EXPR ) ;";
 
   // ASSIGNMENT -> id = EXPR ;
@@ -158,7 +155,6 @@ map<string, map<string, string>> buildParsingTable() {
   table["STATBLOCK"]["while"] = "STATEMENT";
   table["STATBLOCK"]["read"] = "STATEMENT";
   table["STATBLOCK"]["write"] = "STATEMENT";
-  table["STATBLOCK"]["put"] = "STATEMENT";
   table["STATBLOCK"]["return"] = "STATEMENT";
   table["STATBLOCK"][";"] = "EPSILON"; // For the while statement's optional STATBLOCK
 
@@ -251,10 +247,9 @@ map<string, map<string, string>> buildParsingTable() {
   table["RIGHTRECTERM"][">"] = "EPSILON";
   table["RIGHTRECTERM"]["<="] = "EPSILON";
   table["RIGHTRECTERM"][">="] = "EPSILON";
-  table["RIGHTRECTERM"]["("] = "EPSILON"; // Accept '(' for function calls
 
-  // FACTOR -> IDNEST | self | floatlit | intlit | lparen ARITHEXPR rparen | not FACTOR | SIGN FACTOR
-  table["FACTOR"]["id"] = "IDNEST";
+  // FACTOR -> id | floatlit | intlit | lparen ARITHEXPR rparen | not FACTOR | SIGN FACTOR
+  table["FACTOR"]["id"] = "id";
   table["FACTOR"]["self"] = "self";
   table["FACTOR"]["floatlit"] = "floatlit";
   table["FACTOR"]["intlit"] = "intlit";
@@ -263,43 +258,6 @@ map<string, map<string, string>> buildParsingTable() {
   table["FACTOR"]["not"] = "not FACTOR";
   table["FACTOR"]["+"] = "SIGN FACTOR";
   table["FACTOR"]["-"] = "SIGN FACTOR";
-
-  // Add IDNEST rule for both simple identifiers and function calls
-  table["IDNEST"]["id"] = "id IDNESTOP";
-
-  // Add IDNESTOP rule - can be either empty (simple variable) or open paren (function call)
-  table["IDNESTOP"]["("] = "( ARGS )";
-  table["IDNESTOP"]["+"] = "EPSILON";
-  table["IDNESTOP"]["-"] = "EPSILON";
-  table["IDNESTOP"]["*"] = "EPSILON";
-  table["IDNESTOP"]["/"] = "EPSILON";
-  table["IDNESTOP"][";"] = "EPSILON";
-  table["IDNESTOP"][")"] = "EPSILON";
-  table["IDNESTOP"][","] = "EPSILON";
-  table["IDNESTOP"]["=="] = "EPSILON";
-  table["IDNESTOP"]["<>"] = "EPSILON";
-  table["IDNESTOP"]["<"] = "EPSILON";
-  table["IDNESTOP"][">"] = "EPSILON";
-  table["IDNESTOP"]["<="] = "EPSILON";
-  table["IDNESTOP"][">="] = "EPSILON";
-  table["IDNESTOP"]["and"] = "EPSILON";
-  table["IDNESTOP"]["or"] = "EPSILON";
-
-  // Add rules for function arguments
-  table["ARGS"]["id"] = "EXPR ARGSTAIL";
-  table["ARGS"]["self"] = "EXPR ARGSTAIL";
-  table["ARGS"]["("] = "EXPR ARGSTAIL";
-  table["ARGS"]["integer"] = "EXPR ARGSTAIL";
-  table["ARGS"]["floatlit"] = "EXPR ARGSTAIL";
-  table["ARGS"]["intlit"] = "EXPR ARGSTAIL";
-  table["ARGS"]["+"] = "EXPR ARGSTAIL";
-  table["ARGS"]["-"] = "EXPR ARGSTAIL";
-  table["ARGS"]["not"] = "EXPR ARGSTAIL";
-  table["ARGS"][")"] = "EPSILON"; // Empty args
-
-  // ARGSTAIL handles comma-separated arguments
-  table["ARGSTAIL"][","] = ", EXPR ARGSTAIL";
-  table["ARGSTAIL"][")"] = "EPSILON";
 
   // VARIABLE -> IDORSELF
   table["VARIABLE"]["id"] = "id";
@@ -341,17 +299,22 @@ map<string, map<string, string>> buildParsingTable() {
   table["PARAM"]["float"] = "TYPE id ARRAYSIZES";
   table["PARAM"]["id"] = "id : TYPE ARRAYSIZES";
 
-  // PARAMSTAIL -> , PARAM PARAMSTAIL | ; PARAMEND | EPSILON
+  // PARAMSTAIL -> , PARAM PARAMSTAIL | EPSILON
+  table["PARAMSTAIL"][","] = ", PARAM PARAMSTAIL";
+  table["PARAMSTAIL"][";"] = "; PARAM PARAMSTAIL"; // Add this line
+  table["PARAMSTAIL"][")"] = "EPSILON";
+  table["PARAMEND"][")"] = "EPSILON"; // Handle trailing semicolon
+
+  // PARAMSTAIL -> , PARAM PARAMSTAIL | ; PARAM PARAMSTAIL | ; EPSILON | EPSILON
   table["PARAMSTAIL"][","] = ", PARAM PARAMSTAIL";
   table["PARAMSTAIL"][";"] = "; PARAMEND";
   table["PARAMSTAIL"][")"] = "EPSILON";
 
-  // PARAMEND -> PARAM PARAMSTAIL | EPSILON
+  // Add this new rule
   table["PARAMEND"]["int"] = "PARAM PARAMSTAIL";
   table["PARAMEND"]["float"] = "PARAM PARAMSTAIL";
   table["PARAMEND"]["id"] = "PARAM PARAMSTAIL";
-  table["PARAMEND"][")"] = "EPSILON";  // Handle trailing semicolon
-
+  table["PARAMEND"][")"] = "EPSILON"; // Handle trailing semicolon
   // RELOP -> eq | neq | lt | gt | lteq | gteq
   table["RELOP"]["=="] = "==";
   table["RELOP"]["<>"] = "<>";
@@ -379,23 +342,54 @@ map<string, map<string, string>> buildParsingTable() {
 
   // Define the PROGBLOCK nonterminal
   table["PROGBLOCK"]["program"] = "program { STATEMENTS }";
-  
   // Some special terminal substitutions
   table["EPSILON"]["$"] = ""; // Epsilon matches nothing
 
+  // Add to STATEMENT rules
+  // Add in the STATEMENTS rules section
+  table["STATEMENTS"]["put"] = "STATEMENT STATEMENTS";
+
+  // Add in the STATEMENT rules section
+  table["STATEMENT"]["put"] = "put ( EXPR ) ;";
+
   return table;
 }
+
 
 // --- Incremental Parser Interface ---
 // Static variables holding the parser state.
 static vector<string> parseStack;
 static map<string, map<string, string>> parsingTable;
+static ASTBuilder* astBuilder = nullptr; // Add this line
 
 void initParserState() {
   parsingTable = buildParsingTable();
   parseStack.clear();
   parseStack.push_back("$");
   parseStack.push_back("START");
+  
+  // Create a new AST builder if one doesn't exist
+  if (astBuilder == nullptr) {
+    astBuilder = new ASTBuilder();
+  }
+  astBuilder->initialize();
+}
+
+void initParserState(ASTBuilder* builder) {
+  parsingTable = buildParsingTable();
+  parseStack.clear();
+  parseStack.push_back("$");
+  parseStack.push_back("START");
+  
+  // Use the provided AST builder
+  astBuilder = builder;
+  if (astBuilder != nullptr) {
+    astBuilder->initialize();
+  }
+}
+
+ASTBuilder* getASTBuilder() {
+  return astBuilder;
 }
 
 bool feedToken(const Token &token) {
@@ -420,6 +414,12 @@ bool feedToken(const Token &token) {
       // Top is terminal: it must match the current token.
       if (top == currentToken.type || top == currentToken.value) {
         parseStack.pop_back();
+        
+        // Inform AST builder about the token
+        if (astBuilder != nullptr) {
+          astBuilder->processToken(currentToken);
+        }
+        
         return true; // Token successfully matched.
       } else {
         cout << "Syntax error: expected token '" << top << "', but found '" << currentToken.type << "' (value: " << currentToken.value << ")." << endl;
@@ -434,6 +434,12 @@ bool feedToken(const Token &token) {
       }
       string production = rowIt->second.at(lookahead);
       cout << top << " -> " << production << endl;
+      
+      // Inform AST builder about the production
+      if (astBuilder != nullptr) {
+        astBuilder->processProduction(top, production);
+      }
+      
       parseStack.pop_back();
       if (production != "EPSILON") { // Check for "EPSILON" instead of "ε"
         vector<string> symbols = splitProduction(production);
