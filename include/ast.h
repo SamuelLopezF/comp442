@@ -3,206 +3,197 @@
 
 #include <string>
 #include <vector>
-#include <memory>
-#include <iostream>
 
-namespace ast {
-
-// Forward declarations
 class ASTNode;
-class Expression;
-class Statement;
+class Program;
+class ClassDecl;
+class FuncDecl;
+class VarDecl;
 class Type;
+class Statement;
+class IfStatement;
+class WhileStatement;
+class ReturnStatement;
+class AssignStatement;
+class Expression;
+class BinaryExpression;
+class UnaryExpression;
+class CallExpression;
+class Identifier;
+class IntegerLiteral;
+class FloatLiteral;
 
-// Utility function to generate indentation
-std::string getIndent(int indent);
-
-// Binary operation types
-enum class BinaryOp {
-    Add, Sub, Mul, Div, And, Or,
-    Eq, Neq, Lt, Gt, Leq, Geq
-};
-
-// Convert binary operation to string
-std::string binaryOpToString(BinaryOp op);
-
-// Primitive types
-class PrimitiveType {
+// Add the printAST function declaration
+void printAST(ASTNode* root, const std::string& outputFile);
+class ASTVisitor {
 public:
-    enum class Kind {
-        Int, Float, Void
-    };
-    
-    Kind kind;
-    
-    PrimitiveType(Kind kind) : kind(kind) {}
-    virtual void print(std::ostream& os, int indent) const;
+    virtual void visit(Program& node) = 0;
+    virtual void visit(ClassDecl& node) = 0;
+    virtual void visit(FuncDecl& node) = 0;
+    virtual void visit(VarDecl& node) = 0;
+    virtual void visit(Type& node) = 0;
+    virtual void visit(Statement& node) = 0;
+    virtual void visit(IfStatement& node) = 0;
+    virtual void visit(WhileStatement& node) = 0;
+    virtual void visit(ReturnStatement& node) = 0;
+    virtual void visit(AssignStatement& node) = 0;
+    virtual void visit(Expression& node) = 0;
+    virtual void visit(BinaryExpression& node) = 0;
+    virtual void visit(UnaryExpression& node) = 0;
+    virtual void visit(CallExpression& node) = 0;
+    virtual void visit(Identifier& node) = 0;
+    virtual void visit(IntegerLiteral& node) = 0;
+    virtual void visit(FloatLiteral& node) = 0;
 };
 
-std::string primitiveTypeToString(PrimitiveType::Kind kind);
-
-// Base node class
 class ASTNode {
 public:
     virtual ~ASTNode() = default;
-    virtual void print(std::ostream& os, int indent) const = 0;
+    virtual void accept(ASTVisitor& visitor) = 0;
 };
 
-// Expression nodes
-class Expression : public ASTNode {
-public:
-    virtual ~Expression() = default;
-};
-
-// Integer literal
-class IntegerLiteral : public Expression {
-public:
-    int value;
-    
-    IntegerLiteral(int value) : value(value) {}
-    void print(std::ostream& os, int indent) const override;
-};
-
-// Float literal
-class FloatLiteral : public Expression {
-public:
-    float value;
-    
-    FloatLiteral(float value) : value(value) {}
-    void print(std::ostream& os, int indent) const override;
-};
-
-// Variable reference
-class VariableReference : public Expression {
-public:
-    std::string name;
-    
-    VariableReference(const std::string& name) : name(name) {}
-    void print(std::ostream& os, int indent) const override;
-};
-
-// Binary operation
-class BinaryOperation : public Expression {
-public:
-    BinaryOp op;
-    std::shared_ptr<Expression> left;
-    std::shared_ptr<Expression> right;
-    
-    BinaryOperation(BinaryOp op, std::shared_ptr<Expression> left, std::shared_ptr<Expression> right)
-        : op(op), left(left), right(right) {}
-    
-    void print(std::ostream& os, int indent) const override;
-};
-
-// Function call
-class FunctionCall : public Expression {
-public:
-    std::string name;
-    std::vector<std::shared_ptr<Expression>> args;
-    
-    FunctionCall(const std::string& name) : name(name) {}
-    void print(std::ostream& os, int indent) const override;
-};
-
-// Type nodes
-class Type : public ASTNode {
-public:
-    virtual ~Type() = default;
-};
-
-// Array type
-class ArrayType : public Type {
-public:
-    std::shared_ptr<Type> baseType;
-    std::vector<int> dimensions;
-    
-    ArrayType(std::shared_ptr<Type> baseType) : baseType(baseType) {}
-    void print(std::ostream& os, int indent) const override;
-};
-
-// Statement nodes
-class Statement : public ASTNode {
-public:
-    virtual ~Statement() = default;
-};
-
-// Assignment statement
-class AssignmentStatement : public Statement {
-public:
-    std::string variable;
-    std::shared_ptr<Expression> expr;
-    
-    AssignmentStatement(const std::string& variable, std::shared_ptr<Expression> expr)
-        : variable(variable), expr(expr) {}
-    
-    void print(std::ostream& os, int indent) const override;
-};
-
-// Return statement
-class ReturnStatement : public Statement {
-public:
-    std::shared_ptr<Expression> expr;
-    
-    ReturnStatement(std::shared_ptr<Expression> expr) : expr(expr) {}
-    void print(std::ostream& os, int indent) const override;
-};
-
-// Expression statement
-class ExpressionStatement : public Statement {
-public:
-    std::shared_ptr<Expression> expr;
-    
-    ExpressionStatement(std::shared_ptr<Expression> expr) : expr(expr) {}
-    void print(std::ostream& os, int indent) const override;
-};
-
-// Variable declaration
-class VariableDeclaration : public Statement {
-public:
-    std::string name;
-    std::shared_ptr<Type> type;
-    
-    VariableDeclaration(const std::string& name, std::shared_ptr<Type> type)
-        : name(name), type(type) {}
-    
-    void print(std::ostream& os, int indent) const override;
-};
-
-// Function declaration
-class FunctionDeclaration : public ASTNode {
-public:
-    std::string name;
-    std::shared_ptr<Type> returnType;
-    std::vector<std::shared_ptr<VariableDeclaration>> params;
-    std::vector<std::shared_ptr<VariableDeclaration>> locals;
-    std::vector<std::shared_ptr<Statement>> body;
-    
-    FunctionDeclaration(const std::string& name, std::shared_ptr<Type> returnType)
-        : name(name), returnType(returnType) {}
-    
-    void print(std::ostream& os, int indent) const override;
-};
-
-// Class declaration
-class ClassDeclaration : public ASTNode {
-public:
-    std::string name;
-    std::vector<std::string> baseClasses;
-    std::vector<std::shared_ptr<VariableDeclaration>> attributes;
-    std::vector<std::shared_ptr<FunctionDeclaration>> methods;
-    
-    ClassDeclaration(const std::string& name) : name(name) {}
-    void print(std::ostream& os, int indent) const override;
-};
-
-// Program node (root)
 class Program : public ASTNode {
 public:
-    std::vector<std::shared_ptr<ASTNode>> declarations;
-    
-    void print(std::ostream& os, int indent) const override;
+    std::vector<ASTNode*> declarations;
+
+    Program(std::vector<ASTNode*> decls) : declarations(std::move(decls)) {}
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };
 
-} // namespace ast
+class ClassDecl : public ASTNode {
+public:
+    std::string name;
+    std::vector<ASTNode*> members;
 
-#endif // AST_H
+    ClassDecl(std::string n, std::vector<ASTNode*> membs) : name(std::move(n)), members(std::move(membs)) {}
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+};
+
+class FuncDecl : public ASTNode {
+public:
+    std::string name;
+    std::vector<VarDecl*> params;
+    Type* returnType;
+    Statement* body;
+
+    FuncDecl(std::string n, std::vector<VarDecl*> p, Type* type, Statement* b) : 
+        name(std::move(n)), params(std::move(p)), returnType(type), body(b) {}
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }  
+};
+
+class VarDecl : public ASTNode {
+public:
+    std::string name;
+    Type* type;
+
+    VarDecl(std::string n, Type* t) : name(std::move(n)), type(t) {}
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+};
+
+class Type : public ASTNode {
+public:  
+    std::string name;
+
+    Type(std::string n) : name(std::move(n)) {}
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+};
+
+class Statement : public ASTNode {
+public:
+    virtual void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+};
+
+class IfStatement : public Statement {
+public:
+    Expression* condition;
+    Statement* thenStmt;
+    Statement* elseStmt;
+
+    IfStatement(Expression* cond, Statement* thenS, Statement* elseS) : condition(cond), thenStmt(thenS), elseStmt(elseS) {}
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }  
+};
+
+class WhileStatement : public Statement {  
+public:
+    Expression* condition;
+    Statement* body;
+
+    WhileStatement(Expression* cond, Statement* b) : condition(cond), body(b) {}
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+};
+
+class ReturnStatement : public Statement {
+public:
+    Expression* expression;
+
+    ReturnStatement(Expression* expr) : expression(expr) {} 
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+};
+
+class AssignStatement : public Statement {
+public:  
+    Identifier* lhs;
+    Expression* rhs;
+
+    AssignStatement(Identifier* left, Expression* right) : lhs(left), rhs(right) {}
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }  
+};
+
+class Expression : public ASTNode {
+public:
+    virtual void accept(ASTVisitor& visitor) override { visitor.visit(*this); }  
+};
+
+class BinaryExpression : public Expression {
+public:
+    std::string op;  
+    Expression* left;
+    Expression* right;
+
+    BinaryExpression(std::string o, Expression* l, Expression* r) : op(std::move(o)), left(l), right(r) {}
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+};
+
+class UnaryExpression : public Expression {
+public:
+    std::string op;
+    Expression* expr;
+
+    UnaryExpression(std::string o, Expression* e) : op(std::move(o)), expr(e) {}  
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+};
+
+class CallExpression : public Expression {
+public:
+    Identifier* callee; 
+    std::vector<Expression*> args;
+
+    CallExpression(Identifier* c, std::vector<Expression*> a) : callee(c), args(std::move(a)) {}
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }  
+};
+
+class Identifier : public Expression {
+public:
+    std::string name;
+
+    Identifier(std::string n) : name(std::move(n)) {}
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+};
+
+class IntegerLiteral : public Expression {
+public:  
+    int value;
+
+    IntegerLiteral(int v) : value(v) {}
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }  
+};
+
+class FloatLiteral : public Expression {
+public:
+    float value;  
+
+    FloatLiteral(float v) : value(v) {}
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+};
+
+#endif

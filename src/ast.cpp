@@ -1,154 +1,157 @@
 #include "../include/ast.h"
+#include <iostream>
+#include <fstream>
 
-namespace ast {
+class ASTPrintVisitor : public ASTVisitor {
+public:
+    std::ofstream out;
+    int indentLevel = 0;
 
-std::string getIndent(int indent) {
-    return std::string(indent * 2, ' ');
-}
-
-std::string binaryOpToString(BinaryOp op) {
-    switch (op) {
-        case BinaryOp::Add: return "+";
-        case BinaryOp::Sub: return "-";
-        case BinaryOp::Mul: return "*";
-        case BinaryOp::Div: return "/";
-        case BinaryOp::And: return "and";
-        case BinaryOp::Or: return "or";
-        case BinaryOp::Eq: return "==";
-        case BinaryOp::Neq: return "<>";
-        case BinaryOp::Lt: return "<";
-        case BinaryOp::Gt: return ">";
-        case BinaryOp::Leq: return "<=";
-        case BinaryOp::Geq: return ">=";
-        default: return "unknown";
+    ASTPrintVisitor(const std::string& outputFile) {
+        out.open(outputFile);
     }
-}
 
-std::string primitiveTypeToString(PrimitiveType::Kind kind) {
-    switch (kind) {
-        case PrimitiveType::Kind::Int: return "int";
-        case PrimitiveType::Kind::Float: return "float";
-        case PrimitiveType::Kind::Void: return "void";
-        default: return "unknown";
+    ~ASTPrintVisitor() {
+        out.close();
     }
-}
 
-void IntegerLiteral::print(std::ostream& os, int indent) const {
-    os << getIndent(indent) << "IntegerLiteral: " << value << std::endl;
-}
-
-void FloatLiteral::print(std::ostream& os, int indent) const {
-    os << getIndent(indent) << "FloatLiteral: " << value << std::endl;
-}
-
-void VariableReference::print(std::ostream& os, int indent) const {
-    os << getIndent(indent) << "Variable: " << name << std::endl;
-}
-
-void BinaryOperation::print(std::ostream& os, int indent) const {
-    os << getIndent(indent) << "BinaryOperation: " << binaryOpToString(op) << std::endl;
-    os << getIndent(indent + 1) << "Left:" << std::endl;
-    left->print(os, indent + 2);
-    os << getIndent(indent + 1) << "Right:" << std::endl;
-    right->print(os, indent + 2);
-}
-
-void FunctionCall::print(std::ostream& os, int indent) const {
-    os << getIndent(indent) << "FunctionCall: " << name << std::endl;
-    os << getIndent(indent + 1) << "Arguments:" << std::endl;
-    for (const auto& arg : args) {
-        arg->print(os, indent + 2);
-    }
-}
-
-void PrimitiveType::print(std::ostream& os, int indent) const {
-    os << getIndent(indent) << "Type: " << primitiveTypeToString(kind) << std::endl;
-}
-
-void ArrayType::print(std::ostream& os, int indent) const {
-    os << getIndent(indent) << "ArrayType:" << std::endl;
-    os << getIndent(indent + 1) << "BaseType:" << std::endl;
-    baseType->print(os, indent + 2);
-    os << getIndent(indent + 1) << "Dimensions:" << std::endl;
-    for (size_t i = 0; i < dimensions.size(); ++i) {
-        os << getIndent(indent + 2) << dimensions[i] << std::endl;
-    }
-}
-
-void AssignmentStatement::print(std::ostream& os, int indent) const {
-    os << getIndent(indent) << "Assignment:" << std::endl;
-    os << getIndent(indent + 1) << "Variable: " << variable << std::endl;
-    os << getIndent(indent + 1) << "Expression:" << std::endl;
-    expr->print(os, indent + 2);
-}
-
-void ReturnStatement::print(std::ostream& os, int indent) const {
-    os << getIndent(indent) << "Return:" << std::endl;
-    expr->print(os, indent + 1);
-}
-
-void ExpressionStatement::print(std::ostream& os, int indent) const {
-    os << getIndent(indent) << "ExpressionStatement:" << std::endl;
-    expr->print(os, indent + 1);
-}
-
-void VariableDeclaration::print(std::ostream& os, int indent) const {
-    os << getIndent(indent) << "VariableDeclaration: " << name << std::endl;
-    os << getIndent(indent + 1) << "Type:" << std::endl;
-    type->print(os, indent + 2);
-}
-
-void FunctionDeclaration::print(std::ostream& os, int indent) const {
-    os << getIndent(indent) << "FunctionDeclaration: " << name << std::endl;
-    os << getIndent(indent + 1) << "ReturnType:" << std::endl;
-    returnType->print(os, indent + 2);
-    
-    os << getIndent(indent + 1) << "Parameters:" << std::endl;
-    for (const auto& param : params) {
-        param->print(os, indent + 2);
-    }
-    
-    os << getIndent(indent + 1) << "LocalVariables:" << std::endl;
-    for (const auto& local : locals) {
-        local->print(os, indent + 2);
-    }
-    
-    os << getIndent(indent + 1) << "Body:" << std::endl;
-    for (const auto& stmt : body) {
-        stmt->print(os, indent + 2);
-    }
-}
-
-void ClassDeclaration::print(std::ostream& os, int indent) const {
-    os << getIndent(indent) << "ClassDeclaration: " << name << std::endl;
-    
-    if (!baseClasses.empty()) {
-        os << getIndent(indent + 1) << "Inherits from: ";
-        for (size_t i = 0; i < baseClasses.size(); ++i) {
-            os << baseClasses[i];
-            if (i < baseClasses.size() - 1) {
-                os << ", ";
-            }
+    void indent() {
+        for (int i = 0; i < indentLevel; ++i) {
+            out << "  ";
         }
-        os << std::endl;
     }
-    
-    os << getIndent(indent + 1) << "Attributes:" << std::endl;
-    for (const auto& attr : attributes) {
-        attr->print(os, indent + 2);
-    }
-    
-    os << getIndent(indent + 1) << "Methods:" << std::endl;
-    for (const auto& method : methods) {
-        method->print(os, indent + 2);
-    }
-}
 
-void Program::print(std::ostream& os, int indent) const {
-    os << getIndent(indent) << "Program:" << std::endl;
-    for (const auto& decl : declarations) {
-        decl->print(os, indent + 1);
+    void visit(Program& node) override {
+        out << "Program\n";
+        ++indentLevel;
+        for (auto decl : node.declarations) {
+            decl->accept(*this);
+        }
+        --indentLevel;
     }
-}
 
-} // namespace ast
+    void visit(ClassDecl& node) override {
+        indent();
+        out << "ClassDecl: " << node.name << "\n";
+        ++indentLevel;
+        for (auto member : node.members) {
+            member->accept(*this);
+        }
+        --indentLevel;
+    }
+
+    void visit(FuncDecl& node) override {
+        indent();
+        out << "FuncDecl: " << node.name << "\n";
+        ++indentLevel;
+        for (auto param : node.params) {
+            param->accept(*this);
+        }
+        node.returnType->accept(*this);
+        node.body->accept(*this);
+        --indentLevel;
+    }
+
+    void visit(VarDecl& node) override {
+        indent();
+        out << "VarDecl: " << node.name << "\n";
+        ++indentLevel;
+        node.type->accept(*this);
+        --indentLevel;
+    }
+
+    void visit(Type& node) override {
+        indent();
+        out << "Type: " << node.name << "\n";
+    }
+
+    void visit(Statement& node) override {}
+
+    void visit(IfStatement& node) override {
+        indent();
+        out << "IfStatement\n";
+        ++indentLevel;
+        node.condition->accept(*this);
+        node.thenStmt->accept(*this);
+        if (node.elseStmt) {
+            node.elseStmt->accept(*this);
+        }
+        --indentLevel;
+    }
+
+    void visit(WhileStatement& node) override {
+        indent();
+        out << "WhileStatement\n";
+        ++indentLevel;
+        node.condition->accept(*this);
+        node.body->accept(*this);
+        --indentLevel;
+    }
+
+    void visit(ReturnStatement& node) override {
+        indent();
+        out << "ReturnStatement\n";
+        ++indentLevel;
+        node.expression->accept(*this);
+        --indentLevel;
+    }
+
+    void visit(AssignStatement& node) override {
+        indent();
+        out << "AssignStatement\n";
+        ++indentLevel;
+        node.lhs->accept(*this);
+        node.rhs->accept(*this);
+        --indentLevel;  
+    }
+
+    void visit(Expression& node) override {}
+
+    void visit(BinaryExpression& node) override {
+        indent();
+        out << "BinaryExpression: " << node.op << "\n";
+        ++indentLevel;
+        node.left->accept(*this);
+        node.right->accept(*this);
+        --indentLevel;
+    }
+
+    void visit(UnaryExpression& node) override {
+        indent();   
+        out << "UnaryExpression: " << node.op << "\n";
+        ++indentLevel;
+        node.expr->accept(*this);
+        --indentLevel;
+    }
+
+    void visit(CallExpression& node) override {
+        indent();
+        out << "CallExpression\n";  
+        ++indentLevel;
+        node.callee->accept(*this);
+        for (auto arg : node.args) {
+            arg->accept(*this);
+        }
+        --indentLevel;
+    }
+
+    void visit(Identifier& node) override {
+        indent();
+        out << "Identifier: " << node.name << "\n";  
+    }
+
+    void visit(IntegerLiteral& node) override {
+        indent();
+        out << "IntegerLiteral: " << node.value << "\n";
+    }
+
+    void visit(FloatLiteral& node) override {
+        indent(); 
+        out << "FloatLiteral: " << node.value << "\n";
+    }
+};
+
+void printAST(ASTNode* root, const std::string& outputFile) {
+    ASTPrintVisitor visitor(outputFile);
+    root->accept(visitor);
+}
